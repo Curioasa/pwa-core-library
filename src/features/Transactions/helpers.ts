@@ -17,6 +17,7 @@ import {
   ChainID,
   ApiProvider,
   NetworkConfig,
+  TransactionVersion,
 } from '@elrondnetwork/erdjs'
 
 type TxHooks = {
@@ -44,6 +45,8 @@ export const buildTx = async (
     gasLimit: new GasLimit(gasLimit),
     receiver: new Address(receiver),
     value: value,
+    chainID: new ChainID('T'),
+    version: TransactionVersion.withDefaultVersion()
   })
 }
 
@@ -86,13 +89,18 @@ export const fetchAndSendPreparedTx = async (
 ) => handleAppResponse(getPreparedTxRequest(http, preparedTxName, args), async (tx) => await sendPreparedTx(wallet, tx, hooks))
 
 export const sendTx = async (wallet: IWalletService, tx: Transaction, hooks?: TxHooks) => {
-  if (wallet.getProviderId() === 'maiar_extension') {
+  const providerId = wallet.getProviderId()
+  if (providerId === 'web') {
+    await wallet.signWebWalletTransaction(tx);
+  } else {
+  if (providerId === 'maiar_extension') {
     showToast('Please confirm in Maiar DeFi Wallet', 'vibe', faHourglassStart)
-  } else if (wallet.getProviderId() === 'maiar_app') {
+  } else if (providerId === 'maiar_app') {
     showToast('Please confirm in Maiar App', 'vibe', faHourglassStart)
-  } else if (wallet.getProviderId() === 'hardware') {
+  } else if (providerId === 'hardware') {
     showToast('Please confirm on Ledger', 'vibe', faHourglassStart)
   }
+}
 
   const handleSignedEvent = (transaction: Transaction) => hooks?.onSigned && hooks.onSigned(transaction)
 
@@ -139,5 +147,11 @@ export const sendTx = async (wallet: IWalletService, tx: Transaction, hooks?: Tx
     const message = (e instanceof Error ? e.message : e) as string
     handleErrorEvent()
     showToast(capitalizeFirstLetter(message), 'error')
+  }
+}
+
+export const sendWebWalletTx = async (wallet: IWalletService, tx: Transaction, hooks?: TxHooks) => {
+  if (wallet.getProviderId() === 'web') {
+    await wallet.sendTransaction(tx);
   }
 }

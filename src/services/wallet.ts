@@ -42,8 +42,10 @@ export interface IWalletService {
   onLogout?: () => void
   login: (proofableToken: string, addressIndex?: number) => Promise<{ walletConnectLoginUri?: string }>
   logout: () => Promise<void>
+  finalizeLogin: (proofableLogin: ProofableLogin, addressIndex?: number) => void
   isLoggedIn: () => boolean
   signTransaction: (transaction: Transaction) => Promise<Transaction>
+  signWebWalletTransaction: (transaction: Transaction) => void
   sendTransaction: (transaction: Transaction) => Promise<Transaction>
   heartbeat: () => Promise<void>
   getAddress: () => string
@@ -178,6 +180,21 @@ export class WalletService implements IWalletService {
     return await this.provider.signTransaction(tx)
   }
 
+  signWebWalletTransaction = async (tx: Transaction) => {
+    this.ensureLoggedIn()
+    this.ensureInitialized()
+
+    const address = new Address(this.getAddress())
+    const account = new Account(address)
+    await account.sync(this.proxy!)
+
+    await this.ensureAccountHasSufficientBalanceFor(tx, account)
+
+    tx.setNonce(account.nonce)
+
+    return await this.provider.signTransaction(tx, { callbackUrl: `${window.location.href}&chainID=T&version=1` })
+  }
+
   sendTransaction = async (tx: Transaction) => {
     this.ensureLoggedIn()
     this.ensureInitialized()
@@ -225,7 +242,7 @@ export class WalletService implements IWalletService {
     return await (this.provider as HWProvider).getAccounts()
   }
 
-  private finalizeLogin = (proofableLogin: ProofableLogin, addressIndex?: number) => {
+  finalizeLogin = (proofableLogin: ProofableLogin, addressIndex?: number) => {
     this.persistLoginInStorage(proofableLogin.address, addressIndex)
     this.address = proofableLogin.address
     if (this.onLogin) this.onLogin(proofableLogin)

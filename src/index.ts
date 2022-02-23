@@ -103,7 +103,7 @@ export { getTokenTypeDisplayName, getSuperToken } from './features/Tokens/helper
 
 // transactions
 export type { Transaction, TransactionType, PreparedTx } from './features/Transactions/types'
-export { callSmartContract, sendPreparedTx, fetchAndSendPreparedTx, sendTx, buildTx } from './features/Transactions/helpers'
+export { callSmartContract, sendPreparedTx, fetchAndSendPreparedTx, sendTx, buildTx, sendWebWalletTx } from './features/Transactions/helpers'
 export { TxProcessingIndicator } from './features/Transactions/TxProcessingIndicator'
 export { TxProcessingIndicatorOverlay } from './features/Transactions/TxProcessingIndicatorOverlay'
 export { SignTxNote } from './features/Transactions/SignTxNote'
